@@ -1,0 +1,13 @@
+[QRADARINFO]
+url = 
+token =
+ip = 0.0.0.0
+port = 1234
+certpath = 
+
+[QRADARPARAM]
+# interval for checking search finished
+checkquerytime = 5
+# max time for running query 
+maxquerytime = 60
+queryfile = aws_user_query.txt

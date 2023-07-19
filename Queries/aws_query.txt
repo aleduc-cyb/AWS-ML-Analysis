@@ -1,0 +1,1 @@
+select "payload" as 'Payload' from events where "deviceType"='347' order by "startTime" desc last 6 hours
