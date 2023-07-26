@@ -8,7 +8,7 @@ config_object = config.config_object
 
 # Getting data from QRadar directly via API
 # If needed specify store_to_file as true to export the logs to a text file to be reused
-def get_data_from_qradar(query_file, store_to_file=False, filename="data_backup.json"):
+def get_data(query_file, store_to_file=False, filename=config_object['FILES']['databackupfile']):
     global_logger.info('Querying QRadar')
     try:
         results = qradar.get_all(query_file)
@@ -18,24 +18,8 @@ def get_data_from_qradar(query_file, store_to_file=False, filename="data_backup.
         return None
     
     if store_to_file:
-        store_data_to_file(filename, results['events'])
-
-    return results
-
-# Getting data from a file
-def get_data_from_file(filename="data_backup.json"):
-    global_logger.info('Getting data from file')
-    try:
-        file = open(filename, mode='r')
-        file_content = file.read()
-        file.close()
-        file_data = json.loads(file_content)
-        return file_data
-    except Exception as e:
-        global_logger.error("Not possible to get data from file")
-        global_logger.error(str(e))
-        return None
-
+        store_data_to_file(os.path.join('In', 'Data', filename), results['events'])
+    
 # Function to store data to file
 def store_data_to_file(filename, data_to_store, append_mode=False):
     try:
@@ -50,11 +34,3 @@ def store_data_to_file(filename, data_to_store, append_mode=False):
     except Exception as e:
         global_logger.error("Not possible to store to text file")
         global_logger.error(str(e))
-
-# Deleting temporary file
-def remove_file(filename):
-    global_logger.info('Removing file')
-    if os.path.exists(os.path.join('Queries', filename)):
-        os.remove(os.path.join('Queries', filename))
-    else:
-        global_logger.warning("Not possible to remove file")

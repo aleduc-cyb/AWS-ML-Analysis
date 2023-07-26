@@ -11,3 +11,11 @@ checkquerytime = 5
 # max time for running query 
 maxquerytime = 60
 queryfile = aws_user_query.txt
+
+[FILES]
+databackupfile = data_backup.json
+featuresdatafile = features_data.csv
+exclusionsfile = exclusions.txt
+
+[ML]
+topanomalies = 100

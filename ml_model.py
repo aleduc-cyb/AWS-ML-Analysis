@@ -1,29 +1,23 @@
 from sklearn.ensemble import IsolationForest
 from sklearn.preprocessing import StandardScaler
 import numpy as np
-import features_extractor as fe
 import joblib
-import pandas as pd
+import os
+import config
 
-def main():
-    # Get the data (select one)
-    #df = get_data_online()
-    df = get_data_from_file()
-    
+config_object = config.config_object
+
+def main(df, train_model=False):   
     # Format data
-    excluded_users = fe.users_exclusion_list()
-    df = df[~df['username'].isin(excluded_users)]
-    df = df.drop('username', axis=1)
-
     X = df.values
 
-    # Preprocessing data (select one)
-    #X = preprocess_fit(X)
-    X = preprocess_transform(X)
-
-    # Model data (select one)
-    #clf = model_fit(X)
-    clf = model_get_from_file()
+    # Preprocess and get/train model
+    if train_model:
+        X = preprocess_fit(X)
+        clf = model_fit(X)
+    else:
+        X = preprocess_transform(X)
+        clf = model_get_from_file()
 
     # Predict results
     scores_pred = predict_score(clf, X)
@@ -33,26 +27,18 @@ def main():
 
     # Get anomalies
     anomalies = get_anomalies(df, scores_pred, threshold)
-    anomalies = anomalies
-
-def get_data_online():
-    df = fe.main()
-    df.to_csv('Save\data.csv')
-    return df
-
-def get_data_from_file():
-    df = pd.read_csv('Save\data.csv', index_col=0)
-    return df
+    
+    return anomalies
 
 def preprocess_fit(X):
     # Preprocess the data by standardizing it
     scaler = StandardScaler()
     X = scaler.fit_transform(X)
-    joblib.dump(scaler, 'Save\scaler.joblib')
+    joblib.dump(scaler, os.path.join('Out', 'Model', 'scaler.joblib'))
     return X
 
 def preprocess_transform(X):
-    scaler = joblib.load('Save\scaler.joblib')
+    scaler = joblib.load(os.path.join('Out', 'Model', 'scaler.joblib'))
     X = scaler.transform(X)
     return X
 
@@ -60,11 +46,11 @@ def model_fit(X):
     # Apply the Isolation Forest algorithm
     clf = IsolationForest(n_estimators=100, max_samples='auto', contamination=float(0.1), random_state=np.random.RandomState(42))
     clf.fit(X)
-    joblib.dump(clf, 'Save\clf.joblib')
+    joblib.dump(clf, os.path.join('Out', 'Model', 'clf.joblib'))
     return clf
 
 def model_get_from_file():
-    clf = joblib.load('Save\clf.joblib')
+    clf = joblib.load(os.path.join('Out', 'Model', 'clf.joblib'))
     return clf
 
 def predict_score(clf, X):
@@ -73,17 +59,14 @@ def predict_score(clf, X):
     return scores_pred
 
 def get_threshold(scores_pred):
-    threshold = np.percentile(scores_pred, 1)  # top 1% of lowest scores
-    threshold = np.min(scores_pred)
-    k = 100
+    #threshold = np.percentile(scores_pred, 1)  # top 1% of lowest scores
+    #threshold = np.min(scores_pred)
+    k = config_object['ML']['topanomalies']
     threshold = np.partition(scores_pred, k - 1)[k - 1]
     return threshold
 
 def get_anomalies(df, scores_pred, threshold):
     # Identify the anomalies
     anomalies = df[scores_pred <= threshold]
-    anomalies.to_csv('anomalies.csv')
+    anomalies.to_csv(os.path.join('Out', 'Data', 'anomalies.csv'))
     return anomalies
-
-if __name__ == "__main__":
-    main()

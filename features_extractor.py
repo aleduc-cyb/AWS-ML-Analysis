@@ -1,14 +1,13 @@
 import pandas as pd
 import json
 import base64
-import data_fetcher
 import ipaddress
+import os
+import config
 
-#df = pd.read_json('data_backup.json')
-#df = df
+config_object = config.config_object
 
-def format_data():
-    data = data_fetcher.get_data_from_file()
+def format_data(data):
     excluded_users = users_exclusion_list()
 
     formatted_data = {}
@@ -62,51 +61,6 @@ def format_data():
     
     return formatted_data
 
-def format_data_simple():
-    data = data_fetcher.get_data_from_file(filename='data_backup_simple.json')
-    excluded_users = users_exclusion_list()
-
-    formatted_data = {}
-    
-    for log in data:
-        principalId = log['PrincipalId']
-        count = log['Count']
-
-        if not principalId:
-            continue
-        
-        # Exclude some users
-        username = principalId.split(':')
-        if len(username) > 1:
-            userid = username[1]
-            if username[1] in excluded_users:
-                continue
-        else:
-            userid = username[0]
-
-        if not (principalId in formatted_data):
-            formatted_data[principalId] = {}
-
-        formatted_data[principalId]['username'] = userid
-
-        if log['Error Code']:
-            if not 'errorCode' in formatted_data[principalId]:
-                formatted_data[principalId]['errorCode'] = 0
-            formatted_data[principalId]['errorCode'] += count
-
-        if is_valid_ip_address(log['sourceIP']):
-            network_address = ".".join(log['sourceIP'].split(".")[:2]) + ".0.0/16"
-            if not network_address in formatted_data[principalId]:
-                formatted_data[principalId][network_address] = 0
-            formatted_data[principalId][network_address] += count
-
-        if not log['EventSource'] in formatted_data[principalId]:
-            formatted_data[principalId][log['EventSource']] = 0
-        formatted_data[principalId][log['EventSource']] += count
-
-    return formatted_data
-
-
 def create_dataframe(data):
     df = pd.DataFrame.from_dict(data, orient='index')
     return df
@@ -126,16 +80,20 @@ def is_valid_ip_address(ip_address):
         return False
 
 def users_exclusion_list():
-    with open('exclusions.txt') as f:
+    with open(os.path.join('In', 'Data', config_object['FILES']['exclusionsfile'])) as f:
         lines = f.read().splitlines()
     return lines
 
-def main():
-    #data = format_data()
-    data = format_data_simple()
-    df = create_dataframe(data)
-    df = df.fillna(0)
+def get_features_from_file():
+    df = pd.read_csv(os.path.join('Out', 'Data', config_object['FILES']['featuresdatafile']), index_col=0)
     return df
 
-if __name__ == "__main__":
-    main()
+def main(data=None, from_file=False, features_file=config_object['FILES']['featuresdatafile']):
+    if from_file:
+        df = get_features_from_file()
+    else: 
+        formatted_data = format_data(data)
+        df = create_dataframe(formatted_data)
+        df = df.fillna(0)
+        df.to_csv(os.path.join('Out', 'Data', features_file))
+    return df

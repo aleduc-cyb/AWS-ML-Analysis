@@ -1,6 +1,6 @@
 # Configuration file
 config.ini
-data_backup.json
+*.json
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
@@ -140,7 +140,7 @@ request_backup.json
 *.json
 
 # Outputs
-out/*
+Out/*
 
 # VS Code
 .vscode/
@@ -152,3 +152,6 @@ out/*
 *.joblib
 *.csv
 *.txt
+
+# Old files
+*.old
