@@ -1,8 +1,9 @@
+import argparse
 import Fetchers as fetchers
 import config
 import features_extractor as fe
 import ml_model as ml
-import argparse
+import visualize as viz
 
 global_logger = config.global_logger
 config_object = config.config_object
@@ -15,7 +16,8 @@ def main():
     # Perform calculation
     data = get_data(args)
     df = get_features(args, data, args_count)
-    anomalies = get_anomalies(args, df)
+    scores_pred, anomalies_pred, anomalies = get_anomalies(args, df)
+    viz.main(df, anomalies_pred)
 
     return anomalies
 
@@ -93,11 +95,7 @@ def get_features(args, data, args_count):
 
 def get_anomalies(args, df):
     # Calculate anomalies according to args
-    if args.train_model:
-        anomalies = ml.main(df, True)
-    else:
-        anomalies = ml.main(df, False)
-    return anomalies
+    return ml.main(df, args.train_model)
 
 if __name__ == "__main__":
     main()

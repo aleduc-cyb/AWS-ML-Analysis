@@ -20,7 +20,7 @@ def main(df, train_model=False):
         clf = model_get_from_file()
 
     # Predict results
-    scores_pred = predict_score(clf, X)
+    scores_pred, anomalies_pred = predict_score(clf, X)
 
     # Get threshold
     threshold = get_threshold(scores_pred)
@@ -28,7 +28,7 @@ def main(df, train_model=False):
     # Get anomalies
     anomalies = get_anomalies(df, scores_pred, threshold)
     
-    return anomalies
+    return scores_pred, anomalies_pred, anomalies
 
 def preprocess_fit(X):
     # Preprocess the data by standardizing it
@@ -56,12 +56,13 @@ def model_get_from_file():
 def predict_score(clf, X):
     # Predict the anomaly scores for each sample
     scores_pred = clf.decision_function(X)
-    return scores_pred
+    anomalies_pred = clf.predict(X)
+    return scores_pred, anomalies_pred
 
 def get_threshold(scores_pred):
     #threshold = np.percentile(scores_pred, 1)  # top 1% of lowest scores
     #threshold = np.min(scores_pred)
-    k = config_object['ML']['topanomalies']
+    k = int(config_object['ML']['topanomalies'])
     threshold = np.partition(scores_pred, k - 1)[k - 1]
     return threshold
 
